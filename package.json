@@ -1,0 +1,17 @@
+{
+  "name": "jays_closet_server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "Denis Kiarie",
+  "license": "ISC",
+  "description": "Backend for Jays Closet",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
