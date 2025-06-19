@@ -1,6 +1,8 @@
 // server/server.js
 import express from "express";
 import cors from "cors";
+import { db } from "./db.js"; // ✅ Import database connection
+import authRoutes from "./routes/auth.js";
 import { products } from "./data/products.js"; // Sample product data
 
 const app = express();
@@ -15,6 +17,7 @@ app.use(express.json());
 app.use("/images", express.static("public/images")); // serve images if needed
 
 // Routes
+app.use("/api/auth", authRoutes);
 app.get("/api/products", (req, res) => {
   res.json(products);
 });
