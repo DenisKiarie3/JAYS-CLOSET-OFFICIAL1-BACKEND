@@ -7,7 +7,10 @@ const app = express();
 const PORT = 8000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "https://jays-closet-official1.netlify.app", // only allow your frontend
+  methods: ["GET", "POST", "PUT", "DELETE"],
+}));
 app.use(express.json());
 app.use("/images", express.static("public/images")); // serve images if needed
 
