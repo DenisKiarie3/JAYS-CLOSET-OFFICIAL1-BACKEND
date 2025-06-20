@@ -10,7 +10,10 @@ const PORT = 8000;
 
 // Middleware
 app.use(cors({
-  origin: "https://jays-closet-official1.netlify.app", // only allow your frontend
+  origin: [
+    "https://jays-closet-official1.netlify.app", // ✅ production frontend
+    "http://localhost:5173" // ✅ local dev environment
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
 }));
 app.use(express.json());
