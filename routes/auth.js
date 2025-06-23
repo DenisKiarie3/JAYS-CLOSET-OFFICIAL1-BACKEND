@@ -3,6 +3,8 @@ import express from "express";
 import { db } from "../db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"; // ⬅️ NEW: For creating tokens
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 
 
 const router = express.Router();
@@ -87,6 +89,76 @@ router.post("/login", (req, res) => {
       },
     });
   });
+});
+
+// ✅ (Forgot password route)
+// POST /api/auth/forgot-password
+router.post("/forgot-password", (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiry = new Date(Date.now() + 3600000); // 1 hour
+
+  db.query(
+    "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
+    [token, expiry, email],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      if (result.affectedRows === 0)
+        return res.status(404).json({ error: "No user found with that email" });
+
+      // Send email
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      const resetUrl = `https://jays-closet-official1.netlify.app/reset-password/${token}`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Password Reset - JAYS-CLOSET",
+        html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link expires in 1 hour.</p>`,
+      };
+
+      transporter.sendMail(mailOptions, (err, info) => {
+        if (err) return res.status(500).json({ error: "Failed to send email" });
+        res.json({ message: "Reset email sent!" });
+      });
+    }
+  );
+});
+
+// 4️⃣ ✅ Reset Password route (place this HERE)
+router.post("/reset-password/:token", async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: "Password is required" });
+
+  db.query(
+    "SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()",
+    [token],
+    async (err, results) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      if (results.length === 0) return res.status(400).json({ error: "Invalid or expired token" });
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      db.query(
+        "UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = ?",
+        [hashedPassword, token],
+        (err) => {
+          if (err) return res.status(500).json({ error: "Error resetting password" });
+          res.json({ message: "Password reset successful!" });
+        }
+      );
+    }
+  );
 });
 
 
